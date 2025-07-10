@@ -5,6 +5,11 @@ pydantic>=2.10.4
 python-dotenv>=1.0.1
 requests>=2.32.3
 
+# Streamlit and UI dependencies
+streamlit>=1.41.1
+streamlit-markmap>=1.0.1
+streamlit-tags>=1.2.8
+
 # Development dependencies
 pytest>=8.0.0
 black>=24.0.0

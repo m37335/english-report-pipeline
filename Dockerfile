@@ -29,5 +29,8 @@ COPY . .
 # Create necessary directories
 RUN mkdir -p data/output
 
-# Set default command
-ENTRYPOINT ["python", "main.py"] 
+# Expose Streamlit port
+EXPOSE 8501
+
+# Set default command for Streamlit
+CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"] 

@@ -9,7 +9,8 @@ services:
     volumes:
       - ./data:/app/data
       - ./src:/app/src
-    command: ["python", "main.py", "test query"]
+    ports:
+      - "8501:8501"
     profiles:
       - dev
 
@@ -20,5 +21,7 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
     volumes:
       - ./data:/app/data
+    ports:
+      - "8501:8501"
     profiles:
       - prod 

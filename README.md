@@ -13,6 +13,7 @@
 - **外部API検索**: 英語学習リソースからの情報収集
 - **アウトライン生成**: 構造化された学習計画の作成
 - **レポート執筆**: 最終的な英語学習レポートの生成
+- **Web UI**: Streamlitによる直感的なインターフェース
 
 ## セットアップ
 
@@ -27,14 +28,22 @@ OPENAI_API_KEY=your_openai_api_key_here
 ### 2. 依存関係のインストール
 
 ```bash
-pip install -r requirements.txt
+make install
 ```
 
 ### 3. アプリケーションの実行
 
+#### CLI版
 ```bash
 python main.py "your query here"
 ```
+
+#### Web UI版（推奨）
+```bash
+make run-streamlit
+```
+
+ブラウザで http://localhost:8501 にアクセスしてください。
 
 ## Docker環境での実行
 
@@ -46,8 +55,26 @@ docker build -t english-report-pipeline .
 
 ### 実行
 
+#### CLI版
 ```bash
 docker run -it --rm -e OPENAI_API_KEY=your_key english-report-pipeline "your query"
+```
+
+#### Web UI版
+```bash
+docker run -it --rm -p 8501:8501 -e OPENAI_API_KEY=your_key english-report-pipeline
+```
+
+### Docker Compose
+
+#### 開発環境
+```bash
+make docker-compose-dev
+```
+
+#### 本番環境
+```bash
+make docker-compose-prod
 ```
 
 ## 開発
@@ -55,14 +82,19 @@ docker run -it --rm -e OPENAI_API_KEY=your_key english-report-pipeline "your que
 ### テストの実行
 
 ```bash
-pytest tests/
+make test
 ```
 
 ### コードフォーマット
 
 ```bash
-black src/
-flake8 src/
+make format
+```
+
+### 利用可能なコマンド
+
+```bash
+make help
 ```
 
 ## プロジェクト構造
@@ -80,10 +112,29 @@ english_report_pipeline/
 ├── data/                   # データファイル
 ├── tests/                  # テストファイル
 ├── themes/                 # テーマファイル
-├── main.py                 # エントリーポイント
+├── main.py                 # CLIエントリーポイント
+├── app.py                  # Streamlit Web UI
 ├── requirements.txt        # 依存関係
 └── README.md              # このファイル
 ```
+
+## Web UI機能
+
+### 新規レポート生成
+- クエリ入力フォーム
+- プログレスバーによる進行状況表示
+- サンプルクエリ機能
+
+### レポート履歴
+- 生成されたレポートの一覧表示
+- 過去のレポートの再表示
+
+### 設定
+- OpenAI APIキーの設定
+- セッション管理
+
+### ダウンロード機能
+- レポートのMarkdown形式でのダウンロード
 
 ## ライセンス
 

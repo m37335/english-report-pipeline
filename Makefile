@@ -1,4 +1,4 @@
-.PHONY: help install test lint format clean docker-build docker-run docker-compose-dev docker-compose-prod
+.PHONY: help install test lint format clean docker-build docker-run docker-compose-dev docker-compose-prod run-streamlit
 
 help: ## このヘルプを表示
 	@echo "利用可能なコマンド:"
@@ -40,6 +40,9 @@ docker-compose-prod: ## Docker Composeで本番環境を起動
 
 run: ## アプリケーションを実行
 	python main.py "test query"
+
+run-streamlit: ## Streamlitアプリを実行
+	streamlit run app.py --server.port 8501 --server.address 0.0.0.0
 
 setup: install ## 開発環境をセットアップ
 	@echo "開発環境のセットアップが完了しました"

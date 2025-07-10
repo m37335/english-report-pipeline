@@ -1,18 +1,18 @@
 # Core dependencies
-dspy-ai
 openai>=1.58.1
 pydantic>=2.10.4
 python-dotenv>=1.0.1
 requests>=2.32.3
 
+# Web search dependencies
+google-api-python-client>=2.0.0
+beautifulsoup4>=4.12.0
+lxml>=4.9.0
+
 # Streamlit and UI dependencies
 streamlit>=1.41.1
 streamlit-markmap>=1.0.1
 streamlit-tags>=1.2.8
-
-# Mindmap dependencies
-markmap>=0.15.4
-pyyaml>=6.0.1
 
 # Development dependencies
 pytest>=8.0.0

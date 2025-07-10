@@ -1,3 +1,5 @@
+from .llm_client import LLMClient
+
 class ReportWriter:
     """
     アウトラインと検索結果を元に、完全なレポートを執筆するクラス。
@@ -63,6 +65,7 @@ class ReportWriter:
 【レポートドラフト】
 {draft}
 """
+        self.llm_client = LLMClient()
 
     def _format_search_results(self, search_results: dict[str, str]) -> str:
         """検索結果の辞書を番号付きリストの文字列にフォーマットする"""
@@ -85,39 +88,129 @@ class ReportWriter:
             完全なMarkdownレポート
         """
         print("Writing final report...")
-        # search_results_text = self._format_search_results(search_results)
+        
+        try:
+            search_results_text = self._format_search_results(search_results)
+            title = outline.split('\n')[0]
 
-        # 1. リード文生成 (仮実装)
-        # lead_text = llm_api.call(self.lead_prompt.format(refined_query=refined_query))
-        lead_text = f"この記事では、「{refined_query}」について、英語教育の観点から深く掘り下げ、その指導法や理論的背景を解説します。"
-        print("  - Lead section written.")
+            # 1. リード文生成
+            lead_text = self._generate_lead(refined_query)
+            print("  - Lead section written.")
 
-        # 2. 本文生成 (仮実装)
-        # body_text = llm_api.call(self.section_prompt.format(...))
-        # アウトラインからタイトルを除いた本文部分を仮作成
-        body_text = "\n".join(outline.split("\n")[1:]) + "\n\n(ここに各章の詳細な解説が入ります...)"
-        print("  - Body sections written.")
+            # 2. 本文生成
+            body_text = self._generate_body(outline, search_results_text, refined_query)
+            print("  - Body sections written.")
 
-        # 3. 関連文法事項の生成 (仮実装)
-        # related_topics_text = llm_api.call(self.related_topics_prompt.format(initial_query=initial_query))
-        related_topics_text = "- **主要文法1**: 解説...\n- **主要文法2**: 解説..."
-        print("  - Related topics section written.")
+            # 3. 関連文法事項の生成
+            related_topics_text = self._generate_related_topics(initial_query)
+            print("  - Related topics section written.")
 
-        # 4. 結論生成 (仮実装)
-        # draft = outline.split('\n')[0] + "\n" + lead_text + "\n" + body_text
-        # conclusion_text = llm_api.call(self.conclusion_prompt.format(draft=draft))
-        conclusion_text = "本レポートでは...を明らかにし、今後の英語教育における課題と展望を示しました。"
-        print("  - Conclusion section written.")
+            # 4. 結論生成
+            draft = f"{title}\n\n{lead_text}\n\n{body_text}"
+            conclusion_text = self._generate_conclusion(draft)
+            print("  - Conclusion section written.")
 
-        # 5. 全てのパートを結合
+            # 5. 全てのパートを結合
+            final_report = (
+                f"{title}\n\n"
+                f"{lead_text}\n\n"
+                f"{body_text}\n\n"
+                f"## 関連文法事項\n{related_topics_text}\n\n"
+                f"## 結論\n{conclusion_text}"
+            )
+            print("Final report assembled.")
+
+            return final_report
+            
+        except Exception as e:
+            print(f"Error in report writing: {e}")
+            # エラー時のフォールバック
+            return self._get_fallback_report(outline, refined_query)
+    
+    def _generate_lead(self, refined_query: str) -> str:
+        """リード文を生成する"""
+        try:
+            lead_text = self.llm_client.generate_text(
+                self.lead_prompt.format(refined_query=refined_query),
+                max_tokens=300,
+                temperature=0.7
+            )
+            return lead_text.strip() if self.llm_client.validate_response(lead_text) else self._get_fallback_lead(refined_query)
+        except Exception as e:
+            print(f"Error generating lead: {e}")
+            return self._get_fallback_lead(refined_query)
+    
+    def _generate_body(self, outline: str, search_results_text: str, refined_query: str) -> str:
+        """本文を生成する"""
+        try:
+            body_text = self.llm_client.generate_text(
+                self.section_prompt.format(
+                    search_results_text=search_results_text,
+                    outline=outline,
+                    refined_query=refined_query
+                ),
+                max_tokens=3000,
+                temperature=0.5
+            )
+            return body_text.strip() if self.llm_client.validate_response(body_text) else self._get_fallback_body(outline)
+        except Exception as e:
+            print(f"Error generating body: {e}")
+            return self._get_fallback_body(outline)
+    
+    def _generate_related_topics(self, initial_query: str) -> str:
+        """関連文法事項を生成する"""
+        try:
+            related_topics_text = self.llm_client.generate_text(
+                self.related_topics_prompt.format(initial_query=initial_query),
+                max_tokens=500,
+                temperature=0.6
+            )
+            return related_topics_text.strip() if self.llm_client.validate_response(related_topics_text) else self._get_fallback_related_topics()
+        except Exception as e:
+            print(f"Error generating related topics: {e}")
+            return self._get_fallback_related_topics()
+    
+    def _generate_conclusion(self, draft: str) -> str:
+        """結論を生成する"""
+        try:
+            conclusion_text = self.llm_client.generate_text(
+                self.conclusion_prompt.format(draft=draft),
+                max_tokens=800,
+                temperature=0.6
+            )
+            return conclusion_text.strip() if self.llm_client.validate_response(conclusion_text) else self._get_fallback_conclusion()
+        except Exception as e:
+            print(f"Error generating conclusion: {e}")
+            return self._get_fallback_conclusion()
+    
+    def _get_fallback_lead(self, refined_query: str) -> str:
+        """フォールバック用のリード文"""
+        return f"この記事では、「{refined_query}」について、英語教育の観点から深く掘り下げ、その指導法や理論的背景を解説します。"
+    
+    def _get_fallback_body(self, outline: str) -> str:
+        """フォールバック用の本文"""
+        return "\n".join(outline.split("\n")[1:]) + "\n\n(ここに各章の詳細な解説が入ります...)"
+    
+    def _get_fallback_related_topics(self) -> str:
+        """フォールバック用の関連文法事項"""
+        return "- **主要文法1**: 解説...\n- **主要文法2**: 解説..."
+    
+    def _get_fallback_conclusion(self) -> str:
+        """フォールバック用の結論"""
+        return "本レポートでは...を明らかにし、今後の英語教育における課題と展望を示しました。"
+    
+    def _get_fallback_report(self, outline: str, refined_query: str) -> str:
+        """フォールバック用の完全なレポート"""
         title = outline.split('\n')[0]
-        final_report = (
+        lead_text = self._get_fallback_lead(refined_query)
+        body_text = self._get_fallback_body(outline)
+        related_topics_text = self._get_fallback_related_topics()
+        conclusion_text = self._get_fallback_conclusion()
+        
+        return (
             f"{title}\n\n"
             f"{lead_text}\n\n"
             f"{body_text}\n\n"
             f"## 関連文法事項\n{related_topics_text}\n\n"
             f"## 結論\n{conclusion_text}"
         )
-        print("Final report assembled.")
-
-        return final_report

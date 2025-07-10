@@ -1,4 +1,5 @@
 import json
+from .llm_client import LLMClient
 
 class OutlineCreator:
     """
@@ -64,6 +65,7 @@ class OutlineCreator:
 【クエリー】
 {refined_query}
 """
+        self.llm_client = LLMClient()
 
     def _format_search_results(self, search_results: dict[str, str]) -> str:
         """検索結果の辞書を番号付きリストの文字列にフォーマットする"""
@@ -85,8 +87,35 @@ class OutlineCreator:
         """
         print(f"Creating outline for query: {refined_query}")
 
-        # 現時点では仮実装として、固定のMarkdown文字列を返す
-        mock_outline = (
+        try:
+            search_results_text = self._format_search_results(search_results)
+            full_prompt = self.prompt_template.format(
+                search_results_text=search_results_text,
+                refined_query=refined_query
+            )
+            
+            outline = self.llm_client.generate_structured_output(
+                full_prompt, 
+                output_format="markdown"
+            )
+            
+            # レスポンスの妥当性をチェック
+            if self.llm_client.validate_response(outline):
+                print(f"Created outline:\n{outline}")
+                return outline.strip()
+            else:
+                # フォールバック: 仮実装
+                print(f"LLM response validation failed, using fallback")
+                return self._get_fallback_outline()
+                
+        except Exception as e:
+            print(f"Error in outline creation: {e}")
+            # エラー時のフォールバック
+            return self._get_fallback_outline()
+    
+    def _get_fallback_outline(self) -> str:
+        """フォールバック用のアウトラインを返す"""
+        return (
             "# 現在完了進行形の包括的解説\n"
             "## 現在完了進行形の基本構造\n"
             "### have/has been + -ingの形成\n"
@@ -109,6 +138,3 @@ class OutlineCreator:
             "### 現在形・過去形との対比\n"
             "[2][3][4]"
         )
-
-        print(f"Created outline:\n{mock_outline}")
-        return mock_outline

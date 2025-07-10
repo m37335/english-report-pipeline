@@ -1,3 +1,5 @@
+from .llm_client import LLMClient
+
 class QueryRefiner:
     """
     ユーザーのクエリを洗練し、検索に適したクエリーを生成するクラス。
@@ -18,6 +20,7 @@ class QueryRefiner:
 
 ユーザーのクエリー: {user_query}
 """
+        self.llm_client = LLMClient()
 
     def refine(self, user_query: str) -> str:
         """
@@ -29,13 +32,21 @@ class QueryRefiner:
         Returns:
             洗練された検索クエリ
         """
-        # TODO: この部分で実際にLLM APIを呼び出す
-        # full_prompt = self.prompt_template.format(user_query=user_query)
-        # refined_query = llm_api.call(full_prompt)
-        # return refined_query
-
-        # 現時点では仮実装として、加工した文字列を返す
-        print(f"Refining query for: {user_query}")
-        refined_query = f'「{user_query}」に関する英語教育の観点からの解説'
-        print(f"Refined query: {refined_query}")
-        return refined_query
+        try:
+            full_prompt = self.prompt_template.format(user_query=user_query)
+            refined_query = self.llm_client.generate_text(full_prompt, max_tokens=500, temperature=0.3)
+            
+            # レスポンスの妥当性をチェック
+            if self.llm_client.validate_response(refined_query):
+                print(f"Refining query for: {user_query}")
+                print(f"Refined query: {refined_query}")
+                return refined_query.strip()
+            else:
+                # フォールバック: 仮実装
+                print(f"LLM response validation failed, using fallback for: {user_query}")
+                return f'「{user_query}」に関する英語教育の観点からの解説'
+                
+        except Exception as e:
+            print(f"Error in query refinement: {e}")
+            # エラー時のフォールバック
+            return f'「{user_query}」に関する英語教育の観点からの解説'

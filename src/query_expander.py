@@ -1,3 +1,6 @@
+from .llm_client import LLMClient
+import re
+
 class QueryExpander:
     """
     洗練されたクエリを元に、検索トピックを生成するクラス。
@@ -30,6 +33,7 @@ Web検索結果もふまえ、クエリーに関する英語教育的な解説�
 
 クエリー: {refined_query}
 """
+        self.llm_client = LLMClient()
 
     def expand(self, refined_query: str) -> list[str]:
         """
@@ -41,15 +45,45 @@ Web検索結果もふまえ、クエリーに関する英語教育的な解説�
         Returns:
             検索トピックのリスト
         """
-        # TODO: この部分で実際にLLM APIを呼び出す
-        # full_prompt = self.prompt_template.format(refined_query=refined_query)
-        # response_text = llm_api.call(full_prompt)
-        # search_topics = [topic.strip() for topic in response_text.strip().split('- ')[1:]]
-        # return search_topics
-
-        # 現時点では仮実装として、固定のリストを返す
-        print(f"Expanding query for: {refined_query}")
-        search_topics = [
+        try:
+            full_prompt = self.prompt_template.format(refined_query=refined_query)
+            response_text = self.llm_client.generate_text(full_prompt, max_tokens=1000, temperature=0.4)
+            
+            # レスポンスの妥当性をチェック
+            if self.llm_client.validate_response(response_text):
+                # レスポンスから検索トピックを抽出
+                search_topics = self._extract_topics(response_text)
+                print(f"Expanding query for: {refined_query}")
+                print(f"Expanded to topics: {search_topics}")
+                return search_topics
+            else:
+                # フォールバック: 仮実装
+                print(f"LLM response validation failed, using fallback for: {refined_query}")
+                return self._get_fallback_topics(refined_query)
+                
+        except Exception as e:
+            print(f"Error in query expansion: {e}")
+            # エラー時のフォールバック
+            return self._get_fallback_topics(refined_query)
+    
+    def _extract_topics(self, response_text: str) -> list[str]:
+        """レスポンステキストから検索トピックを抽出する"""
+        topics = []
+        lines = response_text.strip().split('\n')
+        
+        for line in lines:
+            line = line.strip()
+            # "- "で始まる行を検索トピックとして抽出
+            if line.startswith('- '):
+                topic = line[2:].strip()
+                if topic:
+                    topics.append(topic)
+        
+        return topics if topics else self._get_fallback_topics("")
+    
+    def _get_fallback_topics(self, refined_query: str) -> list[str]:
+        """フォールバック用の検索トピックを返す"""
+        return [
             "英文法 現在完了進行形 解説",
             "現在完了進行形 指導上の留意点",
             "第二言語習得論 継続相",
@@ -58,5 +92,3 @@ Web検索結果もふまえ、クエリーに関する英語教育的な解説�
             "英語教材研究 現在完了進行形 導入",
             "have been -ing ニュアンス 違い",
         ]
-        print(f"Expanded to topics: {search_topics}")
-        return search_topics

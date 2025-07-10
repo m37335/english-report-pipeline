@@ -1,20 +1,37 @@
-import dspy
 from typing import Dict, List, Any
-import yaml
 import json
-
-class MindmapGenerator(dspy.Signature):
-    """マインドマップ生成用のDSPyシグネチャ"""
-    
-    report_content = dspy.InputField(desc="生成されたレポートの内容")
-    
-    mindmap_data = dspy.OutputField(desc="マインドマップ用の階層構造データ（JSON形式）")
+from .llm_client import LLMClient
 
 class MindmapGeneratorModule:
     """マインドマップ生成モジュール"""
     
     def __init__(self):
-        self.generator = dspy.ChainOfThought(MindmapGenerator)
+        self.llm_client = LLMClient()
+        self.prompt_template = """あなたは英語教育の専門家で、レポート内容を構造化してマインドマップを作成するのが得意です。
+以下のレポート内容を分析し、階層構造を持つマインドマップデータをJSON形式で生成してください。
+
+マインドマップの構造は以下の形式に従ってください：
+- メインノード（レポートのタイトル）
+- サブノード（主要な章やセクション）
+- さらに細かいノード（詳細な内容）
+
+出力は有効なJSON形式で、以下の構造にしてください：
+{
+  "name": "メインノード名",
+  "children": [
+    {
+      "name": "サブノード名",
+      "children": [
+        {"name": "詳細ノード名", "children": []},
+        {"name": "詳細ノード名2", "children": []}
+      ]
+    }
+  ]
+}
+
+レポート内容：
+{report_content}
+"""
     
     def generate_mindmap(self, report_content: str) -> Dict[str, Any]:
         """
@@ -27,22 +44,53 @@ class MindmapGeneratorModule:
             マインドマップ用の階層構造データ
         """
         try:
-            # DSPyでマインドマップデータを生成
-            result = self.generator(report_content=report_content)
+            # LLMでマインドマップデータを生成
+            prompt = self.prompt_template.format(report_content=report_content[:2000])  # 長すぎる場合は切り詰める
+            response = self.llm_client.generate_structured_output(prompt, output_format="json")
             
             # JSON文字列をパース
-            mindmap_data = json.loads(result.mindmap_data)
+            mindmap_data = json.loads(response)
             
-            return mindmap_data
+            # 基本的な構造チェック
+            if self._validate_mindmap_structure(mindmap_data):
+                return mindmap_data
+            else:
+                return self._create_default_mindmap(report_content)
             
         except Exception as e:
+            print(f"Error generating mindmap: {e}")
             # エラー時はデフォルトのマインドマップ構造を返す
             return self._create_default_mindmap(report_content)
     
+    def _validate_mindmap_structure(self, mindmap_data: Dict[str, Any]) -> bool:
+        """マインドマップ構造の妥当性をチェック"""
+        try:
+            if not isinstance(mindmap_data, dict):
+                return False
+            
+            if 'name' not in mindmap_data:
+                return False
+            
+            if 'children' in mindmap_data and not isinstance(mindmap_data['children'], list):
+                return False
+            
+            return True
+        except:
+            return False
+    
     def _create_default_mindmap(self, report_content: str) -> Dict[str, Any]:
         """デフォルトのマインドマップ構造を作成"""
+        # レポート内容からタイトルを抽出
+        lines = report_content.split('\n')
+        title = "English Learning Report"
+        
+        for line in lines:
+            if line.startswith('# '):
+                title = line[2:].strip()
+                break
+        
         return {
-            "name": "English Learning Report",
+            "name": title,
             "children": [
                 {
                     "name": "Main Topics",

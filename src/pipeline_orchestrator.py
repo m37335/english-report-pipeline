@@ -3,6 +3,7 @@ from . import query_expander
 from . import external_api_client
 from . import outline_creater
 from . import report_writer
+from . import mindmap_generator
 
 class PipelineOrchestrator:
     """
@@ -16,9 +17,10 @@ class PipelineOrchestrator:
         self.api_client = external_api_client.ExternalApiClient()
         self.outline_creator = outline_creater.OutlineCreator()
         self.writer = report_writer.ReportWriter()
+        self.mindmap_generator = mindmap_generator.MindmapGeneratorModule()
         print("PipelineOrchestrator initialized.")
 
-    def run(self, initial_query: str) -> str:
+    def run(self, initial_query: str) -> dict:
         """
         パイプラインを実行する。
 
@@ -26,7 +28,7 @@ class PipelineOrchestrator:
             initial_query: ユーザーからの最初のクエリ
 
         Returns:
-            最終的に生成されたレポート
+            最終的に生成されたレポートとマインドマップを含む辞書
         """
         print(f"--- Running pipeline for query: {initial_query} ---")
 
@@ -50,5 +52,15 @@ class PipelineOrchestrator:
         final_report = self.writer.write(outline, search_results, initial_query, refined_query)
         print("Step 5: Report written.")
 
+        # 6. マインドマップ生成
+        mindmap_data = self.mindmap_generator.generate_mindmap(final_report)
+        print("Step 6: Mindmap generated.")
+
         print("--- Pipeline finished ---")
-        return final_report
+        
+        return {
+            'report': final_report,
+            'mindmap': mindmap_data,
+            'query': initial_query,
+            'refined_query': refined_query
+        }

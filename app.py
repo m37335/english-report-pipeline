@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from src.pipeline_orchestrator import PipelineOrchestrator
 import json
 from datetime import datetime
+import streamlit_markmap as st_markmap
 
 # 環境変数の読み込み
 load_dotenv()
@@ -58,7 +59,7 @@ def main():
     st.markdown("AIを活用した英語学習レポート自動生成システム")
     
     # タブの作成
-    tab1, tab2, tab3 = st.tabs(["🆕 新規レポート", "📊 レポート履歴", "ℹ️ 使い方"])
+    tab1, tab2, tab3, tab4 = st.tabs(["🆕 新規レポート", "📊 レポート履歴", "🗺️ マインドマップ", "ℹ️ 使い方"])
     
     with tab1:
         new_report_tab()
@@ -67,6 +68,9 @@ def main():
         history_tab()
     
     with tab3:
+        mindmap_tab()
+    
+    with tab4:
         help_tab()
 
 def new_report_tab():
@@ -119,31 +123,34 @@ def new_report_tab():
                 orchestrator = PipelineOrchestrator()
                 
                 # 各ステップの進行状況を表示
-                status_text.text("ステップ 1/5: クエリを洗練中...")
-                progress_bar.progress(20)
+                status_text.text("ステップ 1/6: クエリを洗練中...")
+                progress_bar.progress(17)
                 
-                status_text.text("ステップ 2/5: 検索トピックを生成中...")
-                progress_bar.progress(40)
+                status_text.text("ステップ 2/6: 検索トピックを生成中...")
+                progress_bar.progress(33)
                 
-                status_text.text("ステップ 3/5: 外部情報を収集中...")
-                progress_bar.progress(60)
+                status_text.text("ステップ 3/6: 外部情報を収集中...")
+                progress_bar.progress(50)
                 
-                status_text.text("ステップ 4/5: アウトラインを作成中...")
-                progress_bar.progress(80)
+                status_text.text("ステップ 4/6: アウトラインを作成中...")
+                progress_bar.progress(67)
                 
-                status_text.text("ステップ 5/5: レポートを執筆中...")
-                progress_bar.progress(90)
+                status_text.text("ステップ 5/6: レポートを執筆中...")
+                progress_bar.progress(83)
                 
-                final_report = orchestrator.run(query)
-                
+                status_text.text("ステップ 6/6: マインドマップを生成中...")
                 progress_bar.progress(100)
+                
+                result = orchestrator.run(query)
+                
                 status_text.text("✅ レポート生成完了！")
                 
                 # レポートの保存
                 report_data = {
                     'title': query[:50] + "..." if len(query) > 50 else query,
                     'query': query,
-                    'report': final_report,
+                    'report': result['report'],
+                    'mindmap': result['mindmap'],
                     'timestamp': datetime.now().isoformat(),
                     'id': len(st.session_state.reports)
                 }
@@ -173,6 +180,52 @@ def history_tab():
             st.markdown("---")
             st.markdown(report['report'])
 
+def mindmap_tab():
+    """マインドマップタブ"""
+    st.subheader("🗺️ マインドマップ")
+    
+    if not st.session_state.reports:
+        st.info("📝 まだレポートがありません。新規レポートタブでレポートを生成してください。")
+        return
+    
+    # 最新のレポートのマインドマップを表示
+    latest_report = st.session_state.reports[-1]
+    
+    if 'mindmap' in latest_report:
+        st.markdown("### 📊 最新レポートのマインドマップ")
+        
+        # マインドマップデータをMarkmap形式に変換
+        mindmap_content = create_markmap_content(latest_report['mindmap'])
+        
+        # Streamlit Markmapで表示
+        st_markmap.markmap(mindmap_content, height=600)
+        
+        # ダウンロードボタン
+        st.download_button(
+            label="📥 マインドマップをダウンロード",
+            data=mindmap_content,
+            file_name=f"mindmap_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md",
+            mime="text/markdown"
+        )
+    else:
+        st.warning("⚠️ このレポートにはマインドマップが含まれていません")
+
+def create_markmap_content(mindmap_data):
+    """マインドマップデータをMarkmap形式に変換"""
+    def _convert_node(node):
+        if isinstance(node, dict):
+            name = node.get('name', '')
+            children = node.get('children', [])
+            
+            if children:
+                return f"# {name}\n" + "\n".join([_convert_node(child) for child in children])
+            else:
+                return f"## {name}"
+        else:
+            return f"## {str(node)}"
+    
+    return _convert_node(mindmap_data)
+
 def help_tab():
     """使い方タブ"""
     st.subheader("ℹ️ 使い方")
@@ -197,13 +250,14 @@ def help_tab():
     
     4. **結果の確認**
        - 生成されたレポートは履歴に保存されます
-       - いつでも過去のレポートを確認できます
+       - マインドマップタブで視覚的な学習マップを確認できます
     
     ### 🔧 技術仕様
     
     - **AIモデル**: OpenAI GPT-4
     - **フレームワーク**: Streamlit
     - **アーキテクチャ**: モジュラー設計（Lawsy設計思想採用）
+    - **マインドマップ**: Markmap形式で視覚化
     
     ### 📚 対応トピック
     
@@ -213,12 +267,25 @@ def help_tab():
     - 英語試験対策
     - その他英語学習関連
     
+    ### 🚀 新機能
+    
+    - **マインドマップ機能**: レポート内容を視覚的に整理
+    - **ダウンロード機能**: レポートとマインドマップの保存
+    - **履歴管理**: 過去のレポートの再表示
+    
+    ### 🗺️ マインドマップについて
+    
+    マインドマップは、レポートの内容を階層構造で視覚化したものです。
+    - 主要なトピックを中心に配置
+    - 関連する概念を枝分かれで表現
+    - 学習の流れを直感的に理解
+    
     ### 🚀 今後の予定
     
-    - マインドマップ機能の追加
     - 音声読み上げ機能
     - 学習進捗の追跡
     - カスタマイズ可能なテーマ
+    - インタラクティブなマインドマップ
     """)
 
 def display_report(report_data):
@@ -239,6 +306,12 @@ def display_report(report_data):
     # レポート本文の表示
     st.markdown(report_data['report'])
     
+    # マインドマップの表示
+    if 'mindmap' in report_data:
+        st.markdown("### 🗺️ マインドマップ")
+        mindmap_content = create_markmap_content(report_data['mindmap'])
+        st_markmap.markmap(mindmap_content, height=400)
+    
     # ダウンロードボタン
     report_text = f"""
 # English Report Pipeline
@@ -253,12 +326,25 @@ def display_report(report_data):
 {report_data['report']}
     """
     
-    st.download_button(
-        label="📥 レポートをダウンロード",
-        data=report_text,
-        file_name=f"english_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md",
-        mime="text/markdown"
-    )
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.download_button(
+            label="📥 レポートをダウンロード",
+            data=report_text,
+            file_name=f"english_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md",
+            mime="text/markdown"
+        )
+    
+    with col2:
+        if 'mindmap' in report_data:
+            mindmap_content = create_markmap_content(report_data['mindmap'])
+            st.download_button(
+                label="🗺️ マインドマップをダウンロード",
+                data=mindmap_content,
+                file_name=f"mindmap_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md",
+                mime="text/markdown"
+            )
 
 if __name__ == "__main__":
     main() 

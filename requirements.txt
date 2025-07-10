@@ -1,5 +1,5 @@
 # Core dependencies
-dspy>=2.5.43
+dspy-ai
 openai>=1.58.1
 pydantic>=2.10.4
 python-dotenv>=1.0.1
@@ -9,6 +9,10 @@ requests>=2.32.3
 streamlit>=1.41.1
 streamlit-markmap>=1.0.1
 streamlit-tags>=1.2.8
+
+# Mindmap dependencies
+markmap>=0.15.4
+pyyaml>=6.0.1
 
 # Development dependencies
 pytest>=8.0.0

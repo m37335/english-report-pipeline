@@ -5,13 +5,14 @@ from src.pipeline_orchestrator import PipelineOrchestrator
 import json
 from datetime import datetime
 import streamlit_markmap as st_markmap
+import time
 
 # 環境変数の読み込み
 load_dotenv()
 
 # ページ設定
 st.set_page_config(
-    page_title="English Report Pipeline",
+    page_title="English Report Pipeline - Lawsy Inspired",
     page_icon="📚",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -22,11 +23,12 @@ if 'reports' not in st.session_state:
     st.session_state.reports = []
 
 def main():
-    """Streamlitアプリケーションのメイン関数"""
+    """Lawsyの設計を参考にしたStreamlitアプリケーションのメイン関数"""
     
     # サイドバー
     with st.sidebar:
         st.title("📚 English Report Pipeline")
+        st.markdown("*Lawsy-inspired AI Research Tool*")
         st.markdown("---")
         
         # 設定セクション
@@ -44,6 +46,14 @@ def main():
         else:
             st.warning("⚠️ APIキーを設定してください")
         
+        # 検索設定
+        st.subheader("🔍 検索設定")
+        search_mode = st.selectbox(
+            "検索モード",
+            ["自動", "教育特化", "一般検索", "詳細検索"],
+            help="検索戦略を選択してください"
+        )
+        
         st.markdown("---")
         
         # 履歴セクション
@@ -56,13 +66,20 @@ def main():
     
     # メインコンテンツ
     st.title("🎯 English Report Generator")
-    st.markdown("AIを活用した英語学習レポート自動生成システム")
+    st.markdown("**Lawsy-inspired AI Research Tool for English Education**")
+    st.markdown("---")
     
     # タブの作成
-    tab1, tab2, tab3, tab4 = st.tabs(["🆕 新規レポート", "📊 レポート履歴", "🗺️ マインドマップ", "ℹ️ 使い方"])
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+        "🆕 新規レポート", 
+        "📊 レポート履歴", 
+        "🗺️ マインドマップ", 
+        "📈 分析ダッシュボード",
+        "ℹ️ 使い方"
+    ])
     
     with tab1:
-        new_report_tab()
+        new_report_tab(search_mode)
     
     with tab2:
         history_tab()
@@ -71,27 +88,45 @@ def main():
         mindmap_tab()
     
     with tab4:
+        analytics_tab()
+    
+    with tab5:
         help_tab()
 
-def new_report_tab():
-    """新規レポート生成タブ"""
+def new_report_tab(search_mode="自動"):
+    """Lawsyの設計を参考にした新規レポート生成タブ"""
     
-    # クエリ入力
-    st.subheader("📝 レポート生成")
+    # ヘッダー
+    st.subheader("📝 Lawsy-inspired Report Generation")
+    st.markdown("**STORM-based Research Pipeline for English Education**")
     
-    query = st.text_area(
-        "英語学習に関するクエリを入力してください",
-        placeholder="例: 英語の比較級と最上級の使い方を教えて",
-        height=100
-    )
-    
-    col1, col2 = st.columns([1, 4])
+    # クエリ入力セクション
+    col1, col2 = st.columns([3, 1])
     
     with col1:
-        generate_button = st.button("🚀 レポート生成", type="primary")
+        query = st.text_area(
+            "英語学習に関するリサーチクエリを入力してください",
+            placeholder="例: 英語の比較級と最上級の使い方を教えて",
+            height=120,
+            help="Lawsyの設計に基づき、詳細なリサーチクエリを入力してください"
+        )
     
     with col2:
-        if st.button("🎲 サンプルクエリ"):
+        st.markdown("### 🎯 クエリタイプ")
+        query_type = st.selectbox(
+            "クエリの種類",
+            ["文法解説", "語彙学習", "読解指導", "リスニング", "ライティング", "その他"],
+            help="クエリの種類を選択すると、より適切な検索戦略が適用されます"
+        )
+        
+        st.markdown("### 🔍 検索戦略")
+        st.info(f"**選択されたモード:** {search_mode}")
+    
+    # サンプルクエリ
+    col1, col2 = st.columns([1, 1])
+    
+    with col1:
+        if st.button("🎲 サンプルクエリ", type="secondary"):
             sample_queries = [
                 "英語の比較級と最上級の使い方を教えて",
                 "現在完了形と過去形の違いを説明して",
@@ -102,68 +137,111 @@ def new_report_tab():
             st.session_state.sample_query = sample_queries[0]
             st.rerun()
     
+    with col2:
+        if st.button("📚 教育特化クエリ", type="secondary"):
+            education_queries = [
+                "学習指導要領に基づく英語教育の指導法",
+                "第二言語習得論における英語学習の理論",
+                "応用言語学の観点からの英語教育",
+                "英語教授法の最新トレンド",
+                "英語教材研究の方法論"
+            ]
+            st.session_state.sample_query = education_queries[0]
+            st.rerun()
+    
     # サンプルクエリの表示
     if 'sample_query' in st.session_state:
         st.info(f"💡 サンプルクエリ: {st.session_state.sample_query}")
         query = st.session_state.sample_query
     
     # レポート生成
-    if generate_button and query:
+    if st.button("🚀 Lawsy-inspired レポート生成", type="primary") and query:
         if not os.getenv("OPENAI_API_KEY"):
             st.error("❌ OpenAI APIキーが設定されていません")
             return
         
-        with st.spinner("🔄 レポートを生成中..."):
-            try:
-                # プログレスバーの作成
-                progress_bar = st.progress(0)
-                status_text = st.empty()
-                
-                # パイプラインの実行
-                orchestrator = PipelineOrchestrator()
-                
-                # 各ステップの進行状況を表示
-                status_text.text("ステップ 1/6: クエリを洗練中...")
-                progress_bar.progress(17)
-                
-                status_text.text("ステップ 2/6: 検索トピックを生成中...")
-                progress_bar.progress(33)
-                
-                status_text.text("ステップ 3/6: 外部情報を収集中...")
-                progress_bar.progress(50)
-                
-                status_text.text("ステップ 4/6: アウトラインを作成中...")
-                progress_bar.progress(67)
-                
-                status_text.text("ステップ 5/6: レポートを執筆中...")
-                progress_bar.progress(83)
-                
-                status_text.text("ステップ 6/6: マインドマップを生成中...")
-                progress_bar.progress(100)
-                
-                result = orchestrator.run(query)
-                
-                status_text.text("✅ レポート生成完了！")
-                
-                # レポートの保存
-                report_data = {
-                    'title': query[:50] + "..." if len(query) > 50 else query,
-                    'query': query,
-                    'report': result['report'],
-                    'mindmap': result['mindmap'],
-                    'timestamp': datetime.now().isoformat(),
-                    'id': len(st.session_state.reports)
-                }
-                
-                st.session_state.reports.append(report_data)
-                st.session_state.current_report = report_data
-                
-                # レポートの表示
-                display_report(report_data)
-                
-            except Exception as e:
-                st.error(f"❌ エラーが発生しました: {str(e)}")
-                st.exception(e)
+        # プログレス表示の改善
+        progress_container = st.container()
+        status_container = st.container()
+        metrics_container = st.container()
+        
+        with progress_container:
+            progress_bar = st.progress(0)
+        
+        with status_container:
+            status_text = st.empty()
+        
+        with metrics_container:
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                education_metric = st.metric("教育ドメイン検索", "0")
+            with col2:
+                general_metric = st.metric("一般検索", "0")
+            with col3:
+                detailed_metric = st.metric("詳細検索", "0")
+            with col4:
+                time_metric = st.metric("処理時間", "0s")
+        
+        try:
+            # パイプラインの実行
+            orchestrator = PipelineOrchestrator()
+            
+            # Lawsyの設計に基づくステップ実行
+            steps = [
+                ("クエリ洗練", "Web検索用にクエリを最適化中..."),
+                ("教育ドメイン検索", "英語教育関連サイトを検索中..."),
+                ("一般Web検索", "一般的なWeb情報を収集中..."),
+                ("クエリ展開", "詳細なリサーチトピックを生成中..."),
+                ("詳細検索", "各トピックを詳細に検索中..."),
+                ("情報統合", "検索結果を統合中..."),
+                ("アウトライン生成", "包括的なアウトラインを作成中..."),
+                ("レポート執筆", "リード文、本文、関連事項、結論を執筆中..."),
+                ("マインドマップ生成", "構造化されたマインドマップを生成中...")
+            ]
+            
+            start_time = time.time()
+            
+            for i, (step_name, step_desc) in enumerate(steps):
+                progress = (i + 1) / len(steps)
+                status_text.text(f"ステップ {i+1}/{len(steps)}: {step_desc}")
+                progress_bar.progress(progress)
+                time.sleep(0.5)  # 視覚的な進行表示
+            
+            # 実際のパイプライン実行
+            result = orchestrator.run(query)
+            
+            # メトリクスの更新
+            if 'search_stats' in result:
+                stats = result['search_stats']
+                education_metric.metric("教育ドメイン検索", stats.get('education_results', 0))
+                general_metric.metric("一般検索", stats.get('general_results', 0))
+                detailed_metric.metric("詳細検索", stats.get('detailed_results', 0))
+                time_metric.metric("処理時間", f"{result.get('processing_time', 0):.1f}s")
+            
+            status_text.text("✅ Lawsy-inspired レポート生成完了！")
+            
+            # レポートの保存
+            report_data = {
+                'title': query[:50] + "..." if len(query) > 50 else query,
+                'query': query,
+                'report': result['report'],
+                'mindmap': result['mindmap'],
+                'timestamp': datetime.now().isoformat(),
+                'id': len(st.session_state.reports),
+                'search_stats': result.get('search_stats', {}),
+                'processing_time': result.get('processing_time', 0),
+                'query_type': query_type
+            }
+            
+            st.session_state.reports.append(report_data)
+            st.session_state.current_report = report_data
+            
+            # レポートの表示
+            display_report(report_data)
+            
+        except Exception as e:
+            st.error(f"❌ エラーが発生しました: {str(e)}")
+            st.exception(e)
 
 def history_tab():
     """レポート履歴タブ"""
@@ -226,66 +304,148 @@ def create_markmap_content(mindmap_data):
     
     return _convert_node(mindmap_data)
 
+def analytics_tab():
+    """Lawsyの設計を参考にした分析ダッシュボードタブ"""
+    st.subheader("📈 Lawsy-inspired Analytics Dashboard")
+    
+    if not st.session_state.reports:
+        st.info("📝 まだレポートがありません。新規レポートタブでレポートを生成してください。")
+        return
+    
+    # 統計情報の計算
+    total_reports = len(st.session_state.reports)
+    total_processing_time = sum([r.get('processing_time', 0) for r in st.session_state.reports])
+    avg_processing_time = total_processing_time / total_reports if total_reports > 0 else 0
+    
+    # クエリタイプの分析
+    query_types = {}
+    for report in st.session_state.reports:
+        query_type = report.get('query_type', 'その他')
+        query_types[query_type] = query_types.get(query_type, 0) + 1
+    
+    # 検索統計の集計
+    total_education_searches = sum([r.get('search_stats', {}).get('education_results', 0) for r in st.session_state.reports])
+    total_general_searches = sum([r.get('search_stats', {}).get('general_results', 0) for r in st.session_state.reports])
+    total_detailed_searches = sum([r.get('search_stats', {}).get('detailed_results', 0) for r in st.session_state.reports])
+    
+    # メトリクス表示
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.metric("総レポート数", total_reports)
+    
+    with col2:
+        st.metric("平均処理時間", f"{avg_processing_time:.1f}s")
+    
+    with col3:
+        st.metric("総検索回数", total_education_searches + total_general_searches + total_detailed_searches)
+    
+    with col4:
+        st.metric("教育特化検索", total_education_searches)
+    
+    # グラフ表示
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("📊 クエリタイプ分布")
+        if query_types:
+            st.bar_chart(query_types)
+        else:
+            st.info("クエリタイプのデータがありません")
+    
+    with col2:
+        st.subheader("🔍 検索戦略分布")
+        search_data = {
+            "教育特化検索": total_education_searches,
+            "一般検索": total_general_searches,
+            "詳細検索": total_detailed_searches
+        }
+        st.bar_chart(search_data)
+    
+    # 詳細分析
+    st.subheader("📋 詳細分析")
+    
+    # 最新のレポートの詳細情報
+    if st.session_state.reports:
+        latest_report = st.session_state.reports[-1]
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("### 🎯 最新レポート情報")
+            st.write(f"**クエリ:** {latest_report['query']}")
+            st.write(f"**クエリタイプ:** {latest_report.get('query_type', '不明')}")
+            st.write(f"**処理時間:** {latest_report.get('processing_time', 0):.1f}秒")
+            st.write(f"**生成日時:** {latest_report['timestamp'][:19]}")
+        
+        with col2:
+            st.markdown("### 🔍 検索統計")
+            stats = latest_report.get('search_stats', {})
+            st.write(f"**教育ドメイン検索:** {stats.get('education_results', 0)}件")
+            st.write(f"**一般検索:** {stats.get('general_results', 0)}件")
+            st.write(f"**詳細検索:** {stats.get('detailed_results', 0)}件")
+            st.write(f"**総トピック数:** {stats.get('total_topics', 0)}件")
+    
+    # パフォーマンス分析
+    st.subheader("⚡ パフォーマンス分析")
+    
+    processing_times = [r.get('processing_time', 0) for r in st.session_state.reports]
+    if processing_times:
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.metric("最短処理時間", f"{min(processing_times):.1f}s")
+        
+        with col2:
+            st.metric("最長処理時間", f"{max(processing_times):.1f}s")
+        
+        with col3:
+            st.metric("中央値", f"{sorted(processing_times)[len(processing_times)//2]:.1f}s")
+
 def help_tab():
-    """使い方タブ"""
-    st.subheader("ℹ️ 使い方")
+    """Lawsyの設計を参考にした使い方タブ"""
+    st.subheader("ℹ️ Lawsy-inspired Usage Guide")
     
     st.markdown("""
-    ### 🎯 このアプリについて
+    ### 📚 English Report Pipeline - Lawsy Inspired
     
-    English Report Pipelineは、AIを活用して英語学習に特化したレポートを自動生成するシステムです。
+    #### 🎯 概要
+    このアプリケーションは、Lawsyの設計を参考にしたAIを活用した英語学習レポート自動生成ツールです。
+    STORMベースの処理フローを採用し、英語教育に特化した検索戦略を実装しています。
     
-    ### 📝 使い方
+    #### 🔬 STORM-based Research Pipeline
+    1. **Synthesis (統合)**: 複数の情報源から情報を収集・統合
+    2. **Transformation (変換)**: クエリを最適化し、検索戦略を決定
+    3. **Organization (整理)**: 収集した情報を構造化
+    4. **Refinement (洗練)**: レポートの品質を向上
+    5. **Mapping (マッピング)**: マインドマップで視覚化
     
-    1. **APIキーの設定**
-       - サイドバーでOpenAI APIキーを入力してください
+    #### 📝 レポート生成の手順
+    1. **クエリ入力**: 英語学習に関する詳細なリサーチクエリを入力
+    2. **検索戦略選択**: 教育特化、一般検索、詳細検索から選択
+    3. **STORM処理**: AIが自動的に情報を収集・分析・統合
+    4. **結果表示**: 包括的なレポートとマインドマップを表示
     
-    2. **クエリの入力**
-       - 英語学習に関する質問やトピックを入力してください
-       - 例: "英語の比較級と最上級の使い方を教えて"
+    #### 🗺️ マインドマップ機能
+    - レポートの内容を階層的に視覚化
+    - 関連する概念を構造的に表示
+    - 学習の理解促進と記憶定着を支援
     
-    3. **レポート生成**
-       - "レポート生成"ボタンをクリック
-       - AIが自動的に情報を収集し、構造化されたレポートを作成します
+    #### 📊 分析ダッシュボード
+    - レポート生成の統計情報を表示
+    - 検索戦略の効果を分析
+    - パフォーマンス指標を監視
     
-    4. **結果の確認**
-       - 生成されたレポートは履歴に保存されます
-       - マインドマップタブで視覚的な学習マップを確認できます
+    #### ⚙️ 設定
+    - OpenAI APIキーの設定が必要
+    - 検索モードの選択が可能
+    - サイドバーから設定可能
     
-    ### 🔧 技術仕様
-    
-    - **AIモデル**: OpenAI GPT-4
-    - **フレームワーク**: Streamlit
-    - **アーキテクチャ**: モジュラー設計（Lawsy設計思想採用）
-    - **マインドマップ**: Markmap形式で視覚化
-    
-    ### 📚 対応トピック
-    
-    - 英文法の解説
-    - 英語表現の使い方
-    - 英語学習のコツ
-    - 英語試験対策
-    - その他英語学習関連
-    
-    ### 🚀 新機能
-    
-    - **マインドマップ機能**: レポート内容を視覚的に整理
-    - **ダウンロード機能**: レポートとマインドマップの保存
-    - **履歴管理**: 過去のレポートの再表示
-    
-    ### 🗺️ マインドマップについて
-    
-    マインドマップは、レポートの内容を階層構造で視覚化したものです。
-    - 主要なトピックを中心に配置
-    - 関連する概念を枝分かれで表現
-    - 学習の流れを直感的に理解
-    
-    ### 🚀 今後の予定
-    
-    - 音声読み上げ機能
-    - 学習進捗の追跡
-    - カスタマイズ可能なテーマ
-    - インタラクティブなマインドマップ
+    #### 🔍 検索戦略
+    - **自動**: システムが最適な戦略を自動選択
+    - **教育特化**: 英語教育関連サイトを重点的に検索
+    - **一般検索**: 幅広いWeb情報を収集
+    - **詳細検索**: 特定のトピックを深く掘り下げ
     """)
 
 def display_report(report_data):

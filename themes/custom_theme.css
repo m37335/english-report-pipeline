@@ -1,0 +1,46 @@
+/* @theme custom */
+
+section {
+  background-color: #add8e6;
+  color: #333;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+body {
+  font-family: "Open Sans", "游ゴシック", "Yu Gothic", "Hiragino Sans", "ヒラギノ角ゴ ProN W3", YuGothic, "Meiryo UI", "メイリオ", Meiryo, sans-serif;
+}
+
+h1 {
+  color: #007bff;
+}
+
+section ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+section li {
+  margin: 0;
+}
+
+.columns-2-4-4 > div:nth-child(1) ul {
+  padding-left: 0;
+  margin-left: 0;
+  list-style-position: inside;
+}
+
+h1, h2, h3 {
+  margin: 0;
+  padding: 0;
+}
+.columns-2-4-4 {
+  display: flex;
+  gap: 1rem;
+}
+.columns-2-4-4 > div:nth-child(1) { flex: 2; }
+.columns-2-4-4 > div:nth-child(2) { flex: 4; }
+.columns-2-4-4 > div:nth-child(3) { flex: 4; }

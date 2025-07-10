@@ -1,0 +1,16 @@
+# Core dependencies
+dspy>=2.5.43
+openai>=1.58.1
+pydantic>=2.10.4
+python-dotenv>=1.0.1
+requests>=2.32.3
+
+# Development dependencies
+pytest>=8.0.0
+black>=24.0.0
+flake8>=7.0.0
+mypy>=1.8.0
+
+# Optional: For better development experience
+ipython>=8.0.0
+jupyter>=1.0.0

@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  english-report-pipeline:
+    build: .
+    container_name: english-report-pipeline
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      - ./data:/app/data
+      - ./src:/app/src
+    command: ["python", "main.py", "test query"]
+    profiles:
+      - dev
+
+  english-report-pipeline-prod:
+    build: .
+    container_name: english-report-pipeline-prod
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      - ./data:/app/data
+    profiles:
+      - prod 
